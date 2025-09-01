@@ -222,9 +222,133 @@ function smoothUpdateProgress(elementId, newValue) {
   }
 }
 
+// ====== HISTORICAL DATA VISUALIZATION ======
+// Simple historical data tracking for system stats
+const historyData = {
+  cpu: [],
+  ram: [],
+  network: { down: [], up: [] },
+  nas: [],
+  maxPoints: 20, // Keep last 20 data points (100 seconds)
+  timestamps: []
+};
+
+// Add data point to history
+function addToHistory(cpuUsage, ramUsage, networkDown, networkUp, nasUsage) {
+  const timestamp = Date.now();
+  
+  historyData.cpu.push(cpuUsage);
+  historyData.ram.push(ramUsage);
+  historyData.network.down.push(networkDown);
+  historyData.network.up.push(networkUp);
+  historyData.nas.push(nasUsage);
+  historyData.timestamps.push(timestamp);
+  
+  // Keep only the last maxPoints
+  if (historyData.cpu.length > historyData.maxPoints) {
+    historyData.cpu.shift();
+    historyData.ram.shift();
+    historyData.network.down.shift();
+    historyData.network.up.shift();
+    historyData.nas.shift();
+    historyData.timestamps.shift();
+  }
+  
+  // Update mini charts if visible
+  updateMiniCharts();
+}
+
+// Create and update mini charts for historical data
+function updateMiniCharts() {
+  if (historyData.cpu.length < 2) return;
+  
+  updateProgressMiniChart('cpuProgress', historyData.cpu);
+  updateProgressMiniChart('ramProgress', historyData.ram);
+  updateProgressMiniChart('nasProgress', historyData.nas);
+}
+
+// Enhanced progress bar with mini historical chart overlay
+function updateProgressMiniChart(elementId, dataPoints) {
+  const element = document.getElementById(elementId);
+  if (!element || dataPoints.length < 2) return;
+  
+  // Remove existing mini chart
+  const existingChart = element.querySelector('.mini-chart');
+  if (existingChart) existingChart.remove();
+  
+  // Create mini chart overlay
+  const miniChart = document.createElement('div');
+  miniChart.className = 'mini-chart';
+  miniChart.innerHTML = createMiniChartSVG(dataPoints);
+  
+  element.appendChild(miniChart);
+}
+
+// Generate SVG mini chart
+function createMiniChartSVG(dataPoints) {
+  const width = 100;
+  const height = 6;
+  const max = Math.max(...dataPoints, 100);
+  const min = Math.min(...dataPoints, 0);
+  const range = max - min || 1;
+  
+  let path = '';
+  dataPoints.forEach((value, index) => {
+    const x = (index / (dataPoints.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    path += index === 0 ? `M${x},${y}` : ` L${x},${y}`;
+  });
+  
+  return `
+    <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="chartGradient-${elementId}" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgba(255,255,255,0.3);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <path d="${path}" stroke="url(#chartGradient-${elementId})" stroke-width="0.5" fill="none" opacity="0.8"/>
+    </svg>
+  `;
+}
+
+// Enhanced stats update with historical tracking
+async function updateAllStatsWithHistory() {
+  try {
+    const data = await fetchStatsWithCache();
+    
+    // Get current values
+    const cpuUsage = Math.round(data.cpu.usage);
+    const ramUsage = Math.round(data.ram.usage);
+    const nasUsage = data.nas && typeof data.nas.usage === 'number' ? Math.round(data.nas.usage) : 0;
+    
+    // Calculate network speeds
+    const now = Date.now();
+    let downSpeed = 0, upSpeed = 0;
+    if (lastNetDown !== null && lastNetUp !== null && lastUpdateTime !== null) {
+      const seconds = (now - lastUpdateTime) / 1000;
+      if (seconds > 0) {
+        downSpeed = Math.max(0, (data.network.down - lastNetDown) / seconds / (1024**2));
+        upSpeed = Math.max(0, (data.network.up - lastNetUp) / seconds / (1024**2));
+      }
+    }
+    
+    // Add to historical data
+    addToHistory(cpuUsage, ramUsage, downSpeed, upSpeed, nasUsage);
+    
+    // Update the regular stats display
+    await updateAllStats();
+    
+  } catch (error) {
+    console.error('Historical stats update failed:', error);
+    // Fallback to regular update
+    await updateAllStats();
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const refreshBtn = document.getElementById('refreshStats');
-  if (refreshBtn) refreshBtn.addEventListener('click', updateAllStats);
-  updateAllStats();
-  setInterval(updateAllStats, 5000);
+  if (refreshBtn) refreshBtn.addEventListener('click', updateAllStatsWithHistory);
+  updateAllStatsWithHistory();
+  setInterval(updateAllStatsWithHistory, 5000);
 });

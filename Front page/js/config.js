@@ -17,3 +17,4 @@ const apps = [
 
 // API configuration
 const apiEndpoint = 'http://192.168.1.24:5001';
+const statsApiEndpoint = 'http://192.168.1.24:3030/api/stats';
