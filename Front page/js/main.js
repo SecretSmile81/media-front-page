@@ -20,25 +20,182 @@ function renderAppsGrid() {
   if (!appsContainer) return;
   appsContainer.innerHTML = ""; // Clear previous
 
+  // Add loading class for performance feedback
+  document.body.classList.add('apps-loading');
+
   for (let i = 0; i < reorderedApps.length; i += 6) {
     const row = document.createElement('div');
     row.className = 'app-row';
 
-    reorderedApps.slice(i, i + 6).forEach(appId => {
+    reorderedApps.slice(i, i + 6).forEach((appId, index) => {
       const app = apps.find(a => a.id === appId);
       if (app) {
-        row.innerHTML += `
-          <a class="app" href="${app.url}" target="_blank" title="${app.name} Dashboard">
-            <div class="app-card" data-app-id="${app.id}" tabindex="0" role="button" aria-label="${app.name} application">
-              <img src="${app.img}" alt="${app.name}" loading="lazy"
-                onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
-              <span class="app-name">${app.name}</span>
-            </div>
-          </a>`;
+        const appElement = document.createElement('a');
+        appElement.className = 'app';
+        appElement.href = app.url;
+        appElement.target = '_blank';
+        appElement.title = `${app.name} Dashboard`;
+        appElement.rel = 'noopener noreferrer';
+        
+        appElement.innerHTML = `
+          <div class="app-card loading" 
+               data-app-id="${app.id}" 
+               tabindex="0" 
+               role="button" 
+               aria-label="Open ${app.name} application dashboard"
+               data-keyboard-index="${i + index}">
+            <img src="${app.img}" 
+                 alt="${app.name} application icon" 
+                 loading="lazy"
+                 decoding="async"
+                 onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
+            <span class="app-name">${app.name}</span>
+          </div>`;
+        
+        row.appendChild(appElement);
+        
+        // Remove loading class after image loads for better UX
+        const img = appElement.querySelector('img');
+        const card = appElement.querySelector('.app-card');
+        
+        const removeLoading = () => {
+          card.classList.remove('loading');
+          document.body.classList.remove('apps-loading');
+        };
+        
+        if (img.complete) {
+          removeLoading();
+        } else {
+          img.addEventListener('load', removeLoading);
+          img.addEventListener('error', removeLoading);
+        }
       }
     });
     appsContainer.appendChild(row);
   }
+
+  // Add keyboard navigation support
+  addKeyboardNavigation();
+}
+
+// Enhanced keyboard navigation for accessibility
+function addKeyboardNavigation() {
+  const appCards = document.querySelectorAll('.app-card');
+  
+  appCards.forEach((card, index) => {
+    card.addEventListener('keydown', (e) => {
+      const currentIndex = parseInt(card.dataset.keyboardIndex);
+      let targetIndex;
+      
+      switch(e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          targetIndex = (currentIndex + 1) % 12;
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          targetIndex = currentIndex === 0 ? 11 : currentIndex - 1;
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          targetIndex = currentIndex + 6 >= 12 ? currentIndex % 6 : currentIndex + 6;
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          targetIndex = currentIndex - 6 < 0 ? currentIndex + 6 : currentIndex - 6;
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          card.closest('a').click();
+          return;
+        default:
+          return;
+      }
+      
+      const targetCard = document.querySelector(`[data-keyboard-index="${targetIndex}"]`);
+      if (targetCard) {
+        targetCard.focus();
+      }
+    });
+  });
+}
+
+// Performance optimizations - intelligent caching for API calls
+const apiCache = new Map();
+const CACHE_TTL = 10000; // 10 seconds
+
+async function cachedFetch(url, options = {}) {
+  const cacheKey = `${url}${JSON.stringify(options)}`;
+  const cached = apiCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(15000)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Cache the successful response
+    apiCache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now()
+    });
+    
+    return response;
+  } catch (error) {
+    console.error(`API call failed for ${url}:`, error);
+    throw error;
+  }
+}
+  
+  // Enhanced keyboard navigation
+  setupKeyboardNavigation();
+}
+
+// Enhanced keyboard navigation support
+function setupKeyboardNavigation() {
+  const appCards = document.querySelectorAll('.app-card');
+  
+  appCards.forEach((card, index) => {
+    card.addEventListener('keydown', (e) => {
+      let targetIndex = index;
+      
+      switch(e.key) {
+        case 'ArrowRight':
+          targetIndex = (index + 1) % appCards.length;
+          break;
+        case 'ArrowLeft':
+          targetIndex = (index - 1 + appCards.length) % appCards.length;
+          break;
+        case 'ArrowDown':
+          targetIndex = (index + 6) % appCards.length;
+          break;
+        case 'ArrowUp':
+          targetIndex = (index - 6 + appCards.length) % appCards.length;
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          card.parentElement.click();
+          return;
+        default:
+          return;
+      }
+      
+      e.preventDefault();
+      appCards[targetIndex].focus();
+    });
+  });
 }
 renderAppsGrid();
 
@@ -185,24 +342,64 @@ async function updateActivityFeed(activities) {
   feed.innerHTML = prioritized.map(createActivityItem).join('');
 }
 
+// Media activity caching for performance
+const mediaCache = {
+  data: null,
+  timestamp: 0,
+  TTL: 8000 // 8 seconds cache for media activity
+};
+
 async function updateMediaActivity() {
   try {
-    const response = await fetch(`${apiEndpoint}/api/media/combined`, {
-      signal: AbortSignal.timeout(15000)
-    });
+    const now = Date.now();
+    let activities;
+    
+    // Use cached data if available and valid
+    if (mediaCache.data && (now - mediaCache.timestamp) < mediaCache.TTL) {
+      activities = mediaCache.data;
+    } else {
+      // Fetch fresh data with timeout and retry logic
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      
+      const response = await fetch(`${apiEndpoint}/api/media/combined`, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`Media API error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      activities = await response.json();
+      
+      // Cache successful response
+      mediaCache.data = activities;
+      mediaCache.timestamp = now;
     }
-
-    const activities = await response.json();
+    
     await updateActivityFeed(activities);
   } catch (error) {
+    // Enhanced error handling with fallback to cached data
+    if (mediaCache.data && error.name !== 'AbortError') {
+      console.warn('Using cached media data due to error:', error.message);
+      await updateActivityFeed(mediaCache.data);
+      return;
+    }
+    
     const feed = document.getElementById('activityFeed');
     if (feed) {
+      const errorType = error.name === 'AbortError' ? 'Request timeout' :
+                       error.message.includes('Failed to fetch') ? 'Network error' :
+                       error.message;
+                       
       feed.innerHTML = `
         <div class="activity-item error-state">
-          <span style="margin-left: 12px;">Failed to load media activity - ${error.message}</span>
+          <span style="margin-left: 12px;">Failed to load media activity - ${errorType}</span>
         </div>
       `;
     }
