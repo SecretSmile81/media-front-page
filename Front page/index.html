@@ -314,6 +314,49 @@
       color: #cccccc;
       line-height: 1.2;
     }
+
+    /* Health indicator styles */
+    .health-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 10;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+      transition: all 0.3s ease;
+      cursor: help;
+      user-select: none;
+    }
+
+    .health-indicator:hover {
+      transform: scale(1.2);
+    }
+
+    .health-online { 
+      color: #00ff00; 
+      text-shadow: 0 0 8px rgba(0,255,0,0.6);
+    }
+
+    .health-degraded { 
+      color: #ffaa00; 
+      text-shadow: 0 0 8px rgba(255,170,0,0.6);
+    }
+
+    .health-offline { 
+      color: #ff4444; 
+      text-shadow: 0 0 8px rgba(255,68,68,0.6);
+    }
+
+    .health-unknown { 
+      color: #666666; 
+      text-shadow: 0 0 4px rgba(102,102,102,0.6);
+    }
+
+    .health-external { 
+      color: #00ccff; 
+      text-shadow: 0 0 8px rgba(0,204,255,0.6);
+    }
     
     /* Activity Panel */
     .activity-panel {
@@ -641,6 +684,216 @@
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Enhanced Loading States & Skeleton Screens */
+    .skeleton {
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton-app-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #111111;
+      border-radius: 8px;
+      padding: 14px;
+      width: 160px;
+      min-width: 160px;
+      max-width: 160px;
+      min-height: 190px;
+      position: relative;
+      border: 1px solid #222222;
+    }
+
+    .skeleton-app-image {
+      width: 140px;
+      height: 140px;
+      border-radius: 11px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .skeleton-app-name {
+      width: 80%;
+      height: 16px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .skeleton-activity-item {
+      display: flex;
+      align-items: center;
+      background: rgba(15, 15, 15, 0.8);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      width: 100%;
+      height: 100px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .skeleton-activity-poster {
+      width: 70px;
+      height: 100px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+      border-radius: 6px 0 0 6px;
+    }
+
+    .skeleton-activity-content {
+      flex: 1;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skeleton-activity-title {
+      width: 70%;
+      height: 16px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .skeleton-activity-subtitle {
+      width: 50%;
+      height: 12px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .skeleton-activity-meta {
+      display: flex;
+      gap: 8px;
+    }
+
+    .skeleton-activity-badge {
+      width: 60px;
+      height: 20px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    /* Connection Status Indicator */
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    .connection-status.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .connection-status.online {
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.3);
+      color: #00ff00;
+    }
+
+    .connection-status.offline {
+      background: rgba(255, 68, 68, 0.1);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      color: #ff4444;
+    }
+
+    .connection-status.reconnecting {
+      background: rgba(255, 170, 0, 0.1);
+      border: 1px solid rgba(255, 170, 0, 0.3);
+      color: #ffaa00;
+    }
+
+    /* Error states with retry buttons */
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 32px;
+      text-align: center;
+      color: #ff6464;
+    }
+
+    .error-icon {
+      font-size: 48px;
+      opacity: 0.6;
+    }
+
+    .error-message {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .error-details {
+      font-size: 12px;
+      color: #888;
+      max-width: 400px;
+      line-height: 1.4;
+    }
+
+    .retry-button {
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+    }
+
+    .retry-button:hover {
+      background: rgba(0, 255, 0, 0.2);
+      box-shadow: 0 0 12px rgba(0, 255, 0, 0.2);
+    }
+
+    .retry-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .retry-button.loading {
+      opacity: 0.7;
+    }
+
+    .retry-button.loading::before {
+      content: '⟳ ';
+      animation: spin 1s linear infinite;
+    }
     
     /* Responsive adjustments */
     @media (max-width: 1200px) {
@@ -779,26 +1032,14 @@
     </section>
   </div>
   
+  <!-- JavaScript Modules -->
+  <script src="js/config.js"></script>
+  <script src="js/loading.js"></script>
+  <script src="js/health.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/stats.js"></script>
+  
   <script>
-    // Configuration
-    const apps = [
-      {id: 'plex', name: 'Plex', url: 'http://192.168.1.24:32400/web', img: 'images/Plex.png'},
-      {id: 'sonarr', name: 'Sonarr', url: 'http://192.168.1.24:8989', img: 'images/Sonarr.png'},
-      {id: 'radarr', name: 'Radarr', url: 'http://192.168.1.24:7878', img: 'images/Radarr.png'},
-      {id: 'lidarr', name: 'Lidarr', url: 'http://192.168.1.24:8686', img: 'images/Lidarr.png'},
-      {id: 'bazarr', name: 'Bazarr', url: 'http://192.168.1.24:6767', img: 'images/Bazarr.png'},
-      {id: 'prowlarr', name: 'Prowlarr', url: 'http://192.168.1.24:9696', img: 'images/Prowlarr.png'},
-      {id: 'sabnzbd', name: 'SABnzbd', url: 'http://192.168.1.24:8080/', img: 'images/Sabnzbd.png'},
-      {id: 'tautulli', name: 'Tautulli', url: 'http://192.168.1.24:8181', img: 'images/Tautulli.png'},
-      {id: 'jellyseerr', name: 'Jellyseerr', url: 'http://192.168.1.17:5055', img: 'images/Jellyfin.png'},
-      // External sites below
-      {id: 'seedr', name: 'Seedr', url: 'https://www.seedr.cc/files', img: 'images/Seedr.png'},
-      {id: 'yts', name: 'YTS', url: 'https://yts.mx/', img: 'images/YTS.png'},
-      {id: '1337x', name: '1337x', url: 'https://1337x.to/home/', img: 'images/1337X.png'}
-    ];
-
-    // API configuration
-    const apiEndpoint = 'http://192.168.1.24:5001';
     
     // PC Stats Monitoring Script (LIVE DATA)
     document.addEventListener('DOMContentLoaded', function() {
@@ -817,6 +1058,9 @@
       // Initialize the activity panel and polling
       updateMediaActivity();
       setInterval(updateMediaActivity, 10000);
+      
+      // Start health monitoring
+      healthMonitor.startMonitoring();
     });
 
     // For live network speed calculation
@@ -830,8 +1074,8 @@
 
     async function updateAllStats() {
       try {
-        // Change this URL if your backend is on a different IP or port
-        const res = await fetch('http://192.168.1.24:3030/api/stats');
+        // Use configured stats endpoint
+        const res = await fetch(`${statsEndpoint}/api/stats`);
         if (!res.ok) throw new Error('Failed to fetch stats');
         const data = await res.json();
 

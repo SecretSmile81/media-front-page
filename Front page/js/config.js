@@ -17,3 +17,15 @@ const apps = [
 
 // API configuration
 const apiEndpoint = 'http://192.168.1.24:5001';
+const healthEndpoint = 'http://192.168.1.24:5002';
+const statsEndpoint = 'http://192.168.1.24:3030';
+
+// External services (no health monitoring)
+const externalServices = ['seedr', 'yts', '1337x'];
+
+// Service health check configuration
+const healthConfig = {
+  checkInterval: 30000,  // 30 seconds
+  retryInterval: 5000,   // 5 seconds on error
+  timeout: 10000         // 10 seconds timeout
+};

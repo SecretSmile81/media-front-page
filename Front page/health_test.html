@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Monitor Test - Shadow Moses</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #cccccc;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #111111;
+            border: 1px solid #222222;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .service-card {
+            background: #151515;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+        }
+        .service-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .service-status {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .service-response-time {
+            font-size: 11px;
+            color: #888;
+        }
+        .status-online { color: #00ff00; }
+        .status-degraded { color: #ffaa00; }
+        .status-offline { color: #ff4444; }
+        .status-unknown { color: #666666; }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+        button:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+        .log {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Service Health Monitor Test</h1>
+        
+        <div class="controls">
+            <button onclick="testHealthAPI()">Test Health API</button>
+            <button onclick="clearLog()">Clear Log</button>
+            <button onclick="startMonitoring()">Start Monitoring</button>
+            <button onclick="stopMonitoring()">Stop Monitoring</button>
+        </div>
+        
+        <div class="service-grid" id="serviceGrid">
+            <!-- Services will be populated here -->
+        </div>
+        
+        <div class="log" id="logOutput">
+            <div>📱 Health Monitor Test Interface Ready</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const healthEndpoint = 'http://127.0.0.1:5002';
+        let monitorInterval = null;
+        
+        // Test services configuration
+        const testServices = {
+            'httpbin': { name: 'HTTPBin (External Test)', url: 'https://httpbin.org' },
+            'google': { name: 'Google (External Test)', url: 'https://google.com' },
+            'plex': { name: 'Plex Media Server', url: 'http://192.168.1.24:32400' },
+            'sonarr': { name: 'Sonarr', url: 'http://192.168.1.24:8989' },
+            'radarr': { name: 'Radarr', url: 'http://192.168.1.24:7878' }
+        };
+
+        function log(message) {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logOutput').innerHTML = '<div>📱 Log cleared</div>';
+        }
+
+        async function testHealthAPI() {
+            log('🔍 Testing health API...');
+            
+            try {
+                const response = await fetch(`${healthEndpoint}/api/health/all`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}`);
+                }
+                
+                const healthData = await response.json();
+                log(`✅ Health API responding with ${Object.keys(healthData).length} services`);
+                
+                updateServiceGrid(healthData);
+                
+            } catch (error) {
+                log(`❌ Health API test failed: ${error.message}`);
+                
+                // Show mock data for demonstration
+                log('📋 Showing mock data for demonstration...');
+                showMockData();
+            }
+        }
+
+        function updateServiceGrid(healthData) {
+            const grid = document.getElementById('serviceGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(healthData).forEach(([serviceId, health]) => {
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                
+                const statusClass = `status-${health.status}`;
+                const responseTime = health.response_time ? `${health.response_time}ms` : 'N/A';
+                
+                card.innerHTML = `
+                    <div class="service-name">${health.name || serviceId}</div>
+                    <div class="service-status ${statusClass}">
+                        Status: ${health.status.toUpperCase()}
+                    </div>
+                    <div class="service-response-time">Response: ${responseTime}</div>
+                    ${health.error ? `<div style="color: #ff6666; font-size: 11px; margin-top: 4px;">${health.error}</div>` : ''}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function showMockData() {
+            const mockData = {
+                'plex': { name: 'Plex Media Server', status: 'offline', response_time: null, error: 'Connection refused' },
+                'sonarr': { name: 'Sonarr', status: 'offline', response_time: null, error: 'Connection refused' },
+                'test1': { name: 'Test Service 1', status: 'online', response_time: 150, error: null },
+                'test2': { name: 'Test Service 2', status: 'degraded', response_time: 800, error: 'Slow response' },
+                'test3': { name: 'Test Service 3', status: 'unknown', response_time: null, error: 'Health check unavailable' }
+            };
+            
+            updateServiceGrid(mockData);
+        }
+
+        function startMonitoring() {
+            if (monitorInterval) {
+                log('⚠️ Monitoring already running');
+                return;
+            }
+            
+            log('▶️ Starting continuous health monitoring...');
+            monitorInterval = setInterval(testHealthAPI, 5000);
+            testHealthAPI(); // Initial check
+        }
+
+        function stopMonitoring() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+                log('⏹️ Monitoring stopped');
+            } else {
+                log('⚠️ Monitoring not running');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Health Monitor Test Interface Loaded');
+            
+            // Show initial mock data
+            setTimeout(showMockData, 1000);
+        });
+    </script>
+</body>
+</html>

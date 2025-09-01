@@ -18,29 +18,47 @@ const reorderedApps = [
 
 function renderAppsGrid() {
   if (!appsContainer) return;
-  appsContainer.innerHTML = ""; // Clear previous
-
-  for (let i = 0; i < reorderedApps.length; i += 6) {
-    const row = document.createElement('div');
-    row.className = 'app-row';
-
-    reorderedApps.slice(i, i + 6).forEach(appId => {
-      const app = apps.find(a => a.id === appId);
-      if (app) {
-        row.innerHTML += `
-          <a class="app" href="${app.url}" target="_blank" title="${app.name} Dashboard">
-            <div class="app-card" data-app-id="${app.id}" tabindex="0" role="button" aria-label="${app.name} application">
-              <img src="${app.img}" alt="${app.name}" loading="lazy"
-                onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
-              <span class="app-name">${app.name}</span>
-            </div>
-          </a>`;
-      }
-    });
-    appsContainer.appendChild(row);
+  
+  // Show skeleton loading
+  if (window.loadingManager) {
+    loadingManager.showAppGridSkeleton();
   }
+  
+  // Simulate loading delay for demonstration
+  setTimeout(() => {
+    appsContainer.innerHTML = ""; // Clear skeleton
+
+    for (let i = 0; i < reorderedApps.length; i += 6) {
+      const row = document.createElement('div');
+      row.className = 'app-row';
+
+      reorderedApps.slice(i, i + 6).forEach(appId => {
+        const app = apps.find(a => a.id === appId);
+        if (app) {
+          row.innerHTML += `
+            <a class="app" href="${app.url}" target="_blank" title="${app.name} Dashboard">
+              <div class="app-card" data-app-id="${app.id}" tabindex="0" role="button" aria-label="${app.name} application">
+                <img src="${app.img}" alt="${app.name}" loading="lazy"
+                  onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
+                <span class="app-name">${app.name}</span>
+              </div>
+            </a>`;
+        }
+      });
+      appsContainer.appendChild(row);
+    }
+    
+    // Enhance images with progressive loading
+    if (window.loadingManager) {
+      loadingManager.enhanceImages();
+    }
+    
+    // After rendering, health monitor will add indicators
+    if (window.healthMonitor) {
+      setTimeout(() => healthMonitor.updateHealthIndicators(), 100);
+    }
+  }, 500); // 500ms loading simulation
 }
-renderAppsGrid();
 
 // ====== MEDIA ACTIVITY PANEL ======
 
@@ -186,6 +204,14 @@ async function updateActivityFeed(activities) {
 }
 
 async function updateMediaActivity() {
+  const feed = document.getElementById('activityFeed');
+  if (!feed) return;
+  
+  // Show skeleton loading
+  if (window.loadingManager) {
+    loadingManager.showActivityFeedSkeleton();
+  }
+  
   try {
     const response = await fetch(`${apiEndpoint}/api/media/combined`, {
       signal: AbortSignal.timeout(15000)
@@ -197,9 +223,32 @@ async function updateMediaActivity() {
 
     const activities = await response.json();
     await updateActivityFeed(activities);
+    
+    // Update connection status to online
+    if (window.loadingManager) {
+      loadingManager.updateConnectionStatus('online');
+    }
+    
   } catch (error) {
-    const feed = document.getElementById('activityFeed');
-    if (feed) {
+    console.error('Media activity update failed:', error);
+    
+    if (window.loadingManager) {
+      // Show error state with retry
+      loadingManager.showErrorState(
+        feed, 
+        error, 
+        updateMediaActivity,
+        'media_activity'
+      );
+      
+      // Update connection status
+      if (error.name === 'AbortError') {
+        loadingManager.updateConnectionStatus('offline', 'Request timeout - API not responding');
+      } else {
+        loadingManager.updateConnectionStatus('offline', `API Error: ${error.message}`);
+      }
+    } else {
+      // Fallback error display
       feed.innerHTML = `
         <div class="activity-item error-state">
           <span style="margin-left: 12px;">Failed to load media activity - ${error.message}</span>
