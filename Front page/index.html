@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadow Moses - Media Server</title>
+  <link rel="icon" type="image/png" href="images/guyfox.png">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* Base styles */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: #0a0a0a;
+      color: #cccccc;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      margin: 0;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 32px 15px 32px;
+      background: rgba(10, 10, 10, 0.95);
+      border-bottom: 1px solid rgba(40, 40, 40, 0.6);
+      margin-bottom: 0;
+      position: relative;
+    }
+    
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.3), transparent);
+    }
+    
+    header img {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
+    }
+    
+    header img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+    }
+    
+    header h1 {
+      color: #fff;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin: 0;
+      background: linear-gradient(90deg, #00ff00 30%, #00cc00 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    
+    /* Dashboard layout */
+    .dashboard {
+      display: flex;
+      padding: 18px;
+      gap: 18px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      min-height: calc(100vh - 80px);
+    }
+    
+    /* Sidebar - PC stats */
+    .sidebar {
+      width: 320px;
+      background: #111111;
+      border: 1px solid #222222;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      overflow-y: auto;
+      height: 650px;
+      max-height: calc(100vh - 120px);
+      position: sticky;
+      top: 20px;
+    }
+    
+    .stats-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #222222;
+    }
+    
+    .stats-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      background: linear-gradient(45deg, #00ff00, #00cc00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+    
+    .refresh-btn {
+      background: rgba(0, 255, 0, 0.08);
+      border: 1px solid rgba(0, 255, 0, 0.2);
+      color: #00ff00;
+      border-radius: 5px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .refresh-btn:hover {
+      background: rgba(0, 255, 0, 0.15);
+      box-shadow: 0 0 8px rgba(0, 255, 0, 0.2);
+    }
+    
+    .stat-group {
+      margin-bottom: 22px;
+    }
+    
+    .stat-group h3 {
+      font-size: 13px;
+      color: #666666;
+      margin: 0 0 12px 0;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding-left: 5px;
+    }
+    
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 9px 12px;
+      background: rgba(20, 20, 20, 0.5);
+      border-radius: 5px;
+      border: 1px solid #222222;
+      transition: all 0.2s ease;
+    }
+    
+    .stat-item:hover {
+      background: rgba(30, 30, 30, 0.6);
+      border-color: rgba(0, 255, 0, 0.1);
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: #999999;
+    }
+    
+    .stat-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cccccc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .progress-bar {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+      position: relative;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .cpu-progress { background: linear-gradient(90deg, #00aa00, #00ff00); }
+    .ram-progress { background: linear-gradient(90deg, #cc5500, #ff8c00); }
+    .storage-progress { background: linear-gradient(90deg, #008800, #00cc00); }
+    .network-progress { background: linear-gradient(90deg, #007700, #00aa00); }
+    
+    .temp-warning { color: #ff6b6b; text-shadow: 0 0 5px rgba(255, 107, 107, 0.3); }
+    .temp-normal { color: #00cc00; }
+    
+    .network-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .network-stat {
+      background: rgba(20, 20, 20, 0.5);
+      border-radius: 5px;
+      padding: 10px;
+      border: 1px solid #222222;
+      transition: all 0.2s ease;
+    }
+    
+    .network-stat:hover {
+      background: rgba(30, 30, 30, 0.6);
+      border-color: rgba(0, 255, 0, 0.1);
+    }
+    
+    .network-label {
+      font-size: 12px;
+      color: #666666;
+      margin-bottom: 5px;
+    }
+    
+    .network-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cccccc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Main content area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      justify-content: flex-start;
+      align-items: center;
+      min-width: 0;
+      height: calc(100vh - 100px);
+      max-width: calc(100vw - 380px);
+      padding: 0 20px;
+    }
+    
+    /* Apps Grid */
+    .apps-container {
+      display: grid !important;
+      grid-template-columns: repeat(6, 1fr) !important;
+      grid-template-rows: auto auto auto auto auto !important;
+      gap: 16px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      justify-items: center;
+      align-items: start;
+    }
+    
+    .app-row { display: contents !important; }
+    
+    .app { text-decoration: none; color: #fff; }
+    
+    .app-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #111111;
+      border-radius: 8px;
+      padding: 14px;
+      width: 160px;
+      min-width: 160px;
+      max-width: 160px;
+      min-height: 190px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      position: relative;
+      cursor: pointer;
+      border: 1px solid #222222;
+    }
+    
+    .app-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 20px rgba(0,255,0,0.2);
+      border-color: rgba(0,255,0,0.3);
+    }
+    
+    .app-card img {
+      width: 140px;
+      height: 140px;
+      border-radius: 11px;
+      margin-bottom: 10px;
+      object-fit: cover;
+    }
+    
+    .app-name {
+      font-size: 13px;
+      font-weight: bold;
+      text-align: center;
+      color: #cccccc;
+      line-height: 1.2;
+    }
+    
+    /* Activity Panel */
+    .activity-panel {
+      grid-column: 1 / -1 !important;
+      grid-row: 3 !important;
+      width: 100% !important;
+      margin: 30px 0 0 0 !important;
+      background: #111111;
+      border: 1px solid #222222;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      position: relative;
+      animation: fadeInUp 0.6s ease-out;
+      min-height: auto;
+      padding: 24px;
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .activity-feed {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 16px !important;
+      width: 100% !important;
+      overflow: visible !important;
+      min-height: auto !important;
+    }
+    
+    .activity-item {
+      display: flex;
+      align-items: center;
+      background: #111111;
+      border: 1px solid #222222;
+      border-radius: 8px;
+      width: 100% !important;
+      min-width: unset !important;
+      max-width: 100% !important;
+      height: 100px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .activity-item:hover {
+      background: #151515;
+      border-color: rgba(0, 255, 0, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    
+    .activity-poster {
+      width: 70px;
+      height: 100px;
+      background: #151515;
+      border-radius: 6px 0 0 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    
+    .activity-poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .activity-item:hover .activity-poster img { transform: scale(1.05); }
+    
+    .activity-content {
+      flex: 1;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    .activity-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    
+    .activity-year {
+      font-size: 12px;
+      color: #888;
+      font-weight: 500;
+    }
+    
+    .activity-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #cccccc;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .activity-subtitle {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .activity-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    
+    .activity-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .activity-status-badge {
+      background: #00aa00;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .activity-status-badge.request { background: #007700; color: #ccc; }
+    .activity-status-badge.download { background: #005500; color: #ccc; }
+    .activity-status-badge.processing { background: #003300; color: #ccc; }
+    .activity-status-badge.completed { background: #00cc00; color: #000; }
+    .activity-status-badge.watching { background: #00ff00; color: #000; }
+    .activity-status-badge.playing { background: #00ff00; color: #000; }
+    .activity-status-badge.paused { background: #005500; color: #ccc; }
+    .activity-status-badge.buffering { background: #003300; color: #ccc; }
+    .activity-status-badge.downloading { background: #007700; color: #ccc; }
+    .activity-status-badge.queued { background: #002200; color: #ccc; }
+    .activity-status-badge.failed { background: #330000; color: #ccc; }
+    .activity-status-badge.approved { background: #00cc00; color: #000; }
+    .activity-status-badge.available { background: #00ff00; color: #000; }
+    .activity-status-badge.declined { background: #550000; color: #ccc; }
+    
+    .activity-user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .activity-user-avatar {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #00aa00, #00ff00);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: bold;
+      color: #000;
+    }
+    
+    .activity-timestamp {
+      font-size: 11px;
+      color: #666;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .activity-quality {
+      background: rgba(0,255,0,0.1);
+      color: #00ff00;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid rgba(0,255,0,0.2);
+    }
+    
+    .activity-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    
+    .activity-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00aa00, #00ff00);
+      width: 0%;
+      transition: width 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .activity-progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: progressShimmer 2s infinite;
+    }
+    
+    @keyframes progressShimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .activity-speed {
+      background: rgba(0,255,0,0.1);
+      color: #00ff00;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid rgba(0,255,0,0.2);
+      margin-left: 8px;
+    }
+    
+    .activity-eta {
+      background: rgba(174,255,0,0.1);
+      color: #aaff00;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid rgba(174,255,0,0.2);
+      margin-left: 4px;
+    }
+    
+    .activity-transcoding {
+      background: rgba(255,100,100,0.1);
+      color: #ff6464;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid rgba(255,100,100,0.2);
+      margin-left: 4px;
+    }
+    
+    .activity-direct-play {
+      background: rgba(117,255,94,0.1);
+      color: #75ff5e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid rgba(117,255,94,0.2);
+      margin-left: 4px;
+    }
+    
+    .activity-type-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+    }
+    
+    .activity-type-indicator.plex { background: #00ff00; }
+    .activity-type-indicator.tautulli { background: #00ff00; }
+    .activity-type-indicator.jellyseerr { background: #00cc00; }
+    .activity-type-indicator.sonarr { background: #00aa00; }
+    .activity-type-indicator.radarr { background: #008800; }
+    .activity-type-indicator.lidarr { background: #006600; }
+    .activity-type-indicator.sabnzbd { background: #00ff00; }
+    .activity-type-indicator.bazarr { background: #00cc00; }
+    
+    .activity-item:hover .activity-type-indicator {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+    
+    .activity-item.no-activity,
+    .activity-item.loading-state,
+    .activity-item.error-state {
+      justify-content: center;
+      align-items: center;
+      grid-column: 1 / -1;
+      background: rgba(15,15,15,0.5);
+      gap: 12px;
+      color: #666;
+    }
+    
+    .activity-item.error-state {
+      color: #ff6464;
+      background: rgba(40,15,15,0.5);
+      border-color: rgba(255,100,100,0.2);
+    }
+    
+    .activity-item.loading-state .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0,255,0,0.3);
+      border-radius: 50%;
+      border-top-color: #00ff00;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .apps-container { grid-template-columns: repeat(5, 1fr) !important; }
+      .sidebar { width: 280px; }
+      .main { max-width: calc(100vw - 340px); }
+    }
+    
+    @media (max-width: 1000px) {
+      .apps-container {
+        grid-template-columns: repeat(4, 1fr) !important;
+        grid-template-rows: repeat(4, auto) !important;
+      }
+      .dashboard { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        max-height: none;
+        height: 400px;
+        position: static;
+        margin-bottom: 20px;
+      }
+      .main { max-width: 100%; height: auto; }
+    }
+    
+    @media (max-width: 900px) {
+      .dashboard {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .main {
+        flex-direction: column;
+        height: auto;
+        max-width: none;
+      }
+      .apps-container {
+        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-rows: repeat(5, auto) !important;
+        width: 100%;
+        padding: 0 10px;
+      }
+      .app-card { width: 153px; min-width: 153px; max-width: 153px; padding: 9px; min-height: 180px; }
+      .app-card img { width: 126px; height: 126px; }
+      .activity-panel { margin: 12px 0 0 0 !important; width: 100% !important; }
+      .activity-feed { grid-template-columns: 1fr !important; padding: 16px; }
+      .activity-item { width: 100% !important; }
+      .activity-poster { width: 50px; height: 70px; }
+      .activity-title { font-size: 14px; }
+      .activity-meta-row { flex-wrap: wrap; gap: 8px; }
+      .activity-speed,
+      .activity-eta,
+      .activity-transcoding,
+      .activity-direct-play { font-size: 9px; padding: 1px 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="images/Title icon.png" alt="Server Icon">
+    <h1>Shadow Moses</h1>
+  </header>
+  <div class="dashboard">
+    <!-- Sidebar for PC stats ONLY -->
+    <div class="sidebar">
+      <div class="stats-header">
+        <h2>System Monitor</h2>
+        <button class="refresh-btn" id="refreshStats">Refresh</button>
+      </div>
+      <div class="stat-group">
+        <h3>Processor</h3>
+        <div class="stat-item">
+          <span class="stat-label">CPU Usage</span>
+          <span class="stat-value" id="cpuUsage">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill cpu-progress" id="cpuProgress" style="width: 0%"></div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Temperature</span>
+          <span class="stat-value" id="cpuTemp">N/A</span>
+        </div>
+      </div>
+      <div class="stat-group">
+        <h3>Memory</h3>
+        <div class="stat-item">
+          <span class="stat-label">RAM Usage</span>
+          <span class="stat-value" id="ramUsage">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill ram-progress" id="ramProgress" style="width: 0%"></div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Used/Total</span>
+          <span class="stat-value" id="ramDetails">0 GB / 0 GB</span>
+        </div>
+      </div>
+      <div class="stat-group">
+        <h3>Network</h3>
+        <div class="network-stats">
+          <div class="network-stat">
+            <div class="network-label">Download</div>
+            <div class="network-value" id="networkDown">0 MB/s</div>
+          </div>
+          <div class="network-stat">
+            <div class="network-label">Upload</div>
+            <div class="network-value" id="networkUp">0 MB/s</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-group">
+        <h3>NAS Storage (Z:\)</h3>
+        <div class="stat-item">
+          <span class="stat-label">Used Space</span>
+          <span class="stat-value" id="nasUsage">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill storage-progress" id="nasProgress" style="width: 0%"></div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Available/Total</span>
+          <span class="stat-value" id="nasDetails">0 GB / 0 GB</span>
+        </div>
+      </div>
+    </div>
+    <section class="main" id="mainContent">
+      <div id="apps" class="apps-container" aria-label="Application shortcuts"></div>
+      <!-- Activity Panel -->
+      <div class="activity-panel">
+        <div class="activity-feed" id="activityFeed">
+          <div class="activity-item loading-state">
+            <span class="loading"></span>
+            <span style="margin-left: 12px;">Loading enhanced media activity...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <script>
+    // Configuration
+    const apps = [
+      {id: 'plex', name: 'Plex', url: 'http://192.168.1.24:32400/web', img: 'images/Plex.png'},
+      {id: 'sonarr', name: 'Sonarr', url: 'http://192.168.1.24:8989', img: 'images/Sonarr.png'},
+      {id: 'radarr', name: 'Radarr', url: 'http://192.168.1.24:7878', img: 'images/Radarr.png'},
+      {id: 'lidarr', name: 'Lidarr', url: 'http://192.168.1.24:8686', img: 'images/Lidarr.png'},
+      {id: 'bazarr', name: 'Bazarr', url: 'http://192.168.1.24:6767', img: 'images/Bazarr.png'},
+      {id: 'prowlarr', name: 'Prowlarr', url: 'http://192.168.1.24:9696', img: 'images/Prowlarr.png'},
+      {id: 'sabnzbd', name: 'SABnzbd', url: 'http://192.168.1.24:8080/', img: 'images/Sabnzbd.png'},
+      {id: 'tautulli', name: 'Tautulli', url: 'http://192.168.1.24:8181', img: 'images/Tautulli.png'},
+      {id: 'jellyseerr', name: 'Jellyseerr', url: 'http://192.168.1.17:5055', img: 'images/Jellyfin.png'},
+      // External sites below
+      {id: 'seedr', name: 'Seedr', url: 'https://www.seedr.cc/files', img: 'images/Seedr.png'},
+      {id: 'yts', name: 'YTS', url: 'https://yts.mx/', img: 'images/YTS.png'},
+      {id: '1337x', name: '1337x', url: 'https://1337x.to/home/', img: 'images/1337X.png'}
+    ];
+
+    // API configuration
+    const apiEndpoint = 'http://192.168.1.24:5001';
+    
+    // PC Stats Monitoring Script (LIVE DATA)
+    document.addEventListener('DOMContentLoaded', function() {
+      const refreshBtn = document.getElementById('refreshStats');
+      refreshBtn.addEventListener('click', updateAllStats);
+
+      // Initial update
+      updateAllStats();
+
+      // Update stats every 5 seconds
+      setInterval(updateAllStats, 5000);
+      
+      // Render apps grid
+      renderAppsGrid();
+      
+      // Initialize the activity panel and polling
+      updateMediaActivity();
+      setInterval(updateMediaActivity, 10000);
+    });
+
+    // For live network speed calculation
+    let lastNetDown = null;
+    let lastNetUp = null;
+    let lastUpdateTime = null;
+
+    function formatGB(val, decimals=1) {
+      return val ? val.toFixed(decimals) : '0.0';
+    }
+
+    async function updateAllStats() {
+      try {
+        // Change this URL if your backend is on a different IP or port
+        const res = await fetch('http://192.168.1.24:3030/api/stats');
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const data = await res.json();
+
+        // --- CPU ---
+        const cpuUsage = Math.round(data.cpu.usage);
+        document.getElementById('cpuUsage').textContent = `${cpuUsage}%`;
+        document.getElementById('cpuProgress').style.width = `${cpuUsage}%`;
+
+        // Temperature (null on Windows)
+        const cpuTempElement = document.getElementById('cpuTemp');
+        if (data.cpu.temp !== null) {
+          cpuTempElement.textContent = `${Math.round(data.cpu.temp)}°C`;
+          cpuTempElement.className = (data.cpu.temp > 75) ? 'stat-value temp-warning' : 'stat-value temp-normal';
+        } else {
+          cpuTempElement.textContent = 'N/A';
+          cpuTempElement.className = 'stat-value temp-normal';
+        }
+
+        // --- RAM ---
+        const ramUsage = Math.round(data.ram.usage);
+        document.getElementById('ramUsage').textContent = `${ramUsage}%`;
+        document.getElementById('ramProgress').style.width = `${ramUsage}%`;
+        document.getElementById('ramDetails').textContent = `${formatGB(data.ram.used)} GB / ${formatGB(data.ram.total)} GB`;
+
+        // --- NETWORK ---
+        // Calculate MB/s based on difference from previous poll
+        const now = Date.now();
+        let downSpeed = 0, upSpeed = 0;
+        if (lastNetDown !== null && lastNetUp !== null && lastUpdateTime !== null) {
+          const seconds = (now - lastUpdateTime) / 1000;
+          downSpeed = (data.network.down - lastNetDown) / seconds / (1024**2);
+          upSpeed = (data.network.up - lastNetUp) / seconds / (1024**2);
+        }
+        document.getElementById('networkDown').textContent = `${downSpeed.toFixed(2)} MB/s`;
+        document.getElementById('networkUp').textContent = `${upSpeed.toFixed(2)} MB/s`;
+        lastNetDown = data.network.down;
+        lastNetUp = data.network.up;
+        lastUpdateTime = now;
+
+        // --- NAS (Z:) ---
+        if (data.nas) {
+          const nasUsage = Math.round(data.nas.usage);
+          const totalNas = formatGB(data.nas.total, 0);
+          const freeNas = formatGB(data.nas.free, 0);
+          document.getElementById('nasUsage').textContent = `${nasUsage}%`;
+          document.getElementById('nasProgress').style.width = `${nasUsage}%`;
+          document.getElementById('nasDetails').textContent = `${freeNas} GB free of ${totalNas} GB`;
+        } else {
+          document.getElementById('nasUsage').textContent = `N/A`;
+          document.getElementById('nasProgress').style.width = `0%`;
+          document.getElementById('nasDetails').textContent = `N/A`;
+        }
+      } catch (err) {
+        // On error, set placeholders
+        document.getElementById('cpuUsage').textContent = `?`;
+        document.getElementById('cpuProgress').style.width = `0%`;
+        document.getElementById('cpuTemp').textContent = `N/A`;
+        document.getElementById('ramUsage').textContent = `?`;
+        document.getElementById('ramProgress').style.width = `0%`;
+        document.getElementById('ramDetails').textContent = `?`;
+        document.getElementById('networkDown').textContent = `?`;
+        document.getElementById('networkUp').textContent = `?`;
+        document.getElementById('nasUsage').textContent = `?`;
+        document.getElementById('nasProgress').style.width = `0%`;
+        document.getElementById('nasDetails').textContent = `?`;
+        // Optionally: show a toast or alert
+        console.error('Failed to fetch live stats:', err);
+      }
+    }
+    
+    // ====== APPS GRID ======
+    const appsContainer = document.getElementById('apps');
+    const reorderedApps = [
+      'jellyseerr', 'tautulli', 'plex', 'seedr', 'yts', '1337x',
+      'sabnzbd', 'sonarr', 'radarr', 'lidarr', 'bazarr', 'prowlarr'
+    ];
+
+    function renderAppsGrid() {
+      if (!appsContainer) return;
+      appsContainer.innerHTML = ""; // Clear previous
+
+      for (let i = 0; i < reorderedApps.length; i += 6) {
+        const row = document.createElement('div');
+        row.className = 'app-row';
+
+        reorderedApps.slice(i, i + 6).forEach(appId => {
+          const app = apps.find(a => a.id === appId);
+          if (app) {
+            row.innerHTML += `
+              <a class="app" href="${app.url}" target="_blank" title="${app.name} Dashboard">
+                <div class="app-card" data-app-id="${app.id}" tabindex="0" role="button" aria-label="${app.name} application">
+                  <img src="${app.img}" alt="${app.name}" loading="lazy"
+                    onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
+                  <span class="app-name">${app.name}</span>
+                </div>
+              </a>`;
+          }
+        });
+        appsContainer.appendChild(row);
+      }
+    }
+    
+    // ====== MEDIA ACTIVITY PANEL ======
+    const OMDB_API_KEY = '35a12949';
+
+    // Utility: Format time
+    function formatActivityTime(timestamp) {
+      const now = new Date();
+      const time = new Date(timestamp);
+      const diff = Math.floor((now - time) / 1000);
+
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
+    }
+
+    function getActivityIcon(activity) {
+      const iconMap = {
+        'watching': '▶️', 'playing': '▶️', 'paused': '⏸️', 'buffering': '⏳',
+        'downloading': '⬇️', 'download': '⬇️', 'completed': '✅', 'processing': '⚙️',
+        'request': '📝', 'approved': '✅', 'available': '🎬', 'declined': '❌',
+        'queued': '⏳', 'failed': '❌'
+      };
+      return iconMap[activity.type] || '📺';
+    }
+
+    // OMDb fallback for missing info
+    async function fillMissingMetadata(activity) {
+      const needsTitle = !activity.title || activity.title.toLowerCase().startsWith('unknown');
+      const needsPoster = !activity.poster || activity.poster.includes('placeholder') || activity.poster.includes('Unknown');
+
+      if (!needsTitle && !needsPoster) return activity;
+
+      if (activity.imdbId) {
+        try {
+          const omdbUrl = `https://www.omdbapi.com/?i=${activity.imdbId}&apikey=${OMDB_API_KEY}`;
+          const omdbData = await fetch(omdbUrl).then(r => r.ok ? r.json() : null).catch(() => null);
+          if (omdbData && omdbData.Response !== "False") {
+            if (needsTitle && omdbData.Title) activity.title = omdbData.Title;
+            if (needsPoster && omdbData.Poster && omdbData.Poster !== "N/A") activity.poster = omdbData.Poster;
+            if (!activity.year && omdbData.Year) activity.year = omdbData.Year;
+          }
+        } catch { /* ignore */ }
+      }
+      if (!activity.poster) {
+        const firstLetter = activity.title ? activity.title.charAt(0).toUpperCase() : '?';
+        activity.poster = `https://via.placeholder.com/70x100/1a1a1a/00ff00?text=${encodeURIComponent(firstLetter)}`;
+      }
+      return activity;
+    }
+
+    // Group by type
+    function groupActivities(activities) {
+      return {
+        live: activities.filter(a => ['watching', 'playing', 'paused', 'buffering'].includes(a.type)),
+        downloads: activities.filter(a => ['downloading', 'download', 'queued', 'processing'].includes(a.type)),
+        requests: activities.filter(a => a.type === 'request'),
+        completed: activities.filter(a => a.type === 'completed')
+      };
+    }
+
+    function createActivityItem(activity) {
+      const posterUrl = activity.poster;
+      const progressHtml = activity.progress ? `
+        <div class="activity-progress">
+          <div class="activity-progress-fill" style="width: ${activity.progress}%"></div>
+        </div>
+      ` : '';
+
+      const statusIcon = getActivityIcon(activity);
+      const enhancedStatusText = `${statusIcon} ${activity.statusText || (activity.status ? activity.status.toUpperCase() : '')}`;
+
+      let downloadInfo = '';
+      if (activity.speed && activity.speed > 0) downloadInfo += `<span class="activity-speed">${activity.speed.toFixed(1)} MB/s</span>`;
+      if (activity.eta && activity.eta !== 'Unknown') downloadInfo += `<span class="activity-eta">${activity.eta}</span>`;
+      if (activity.timeRemaining) downloadInfo += `<span class="activity-eta">${activity.timeRemaining}</span>`;
+
+      let transcodingInfo = '';
+      if (activity.transcoding === true) transcodingInfo = '<span class="activity-transcoding">🔄 Transcoding</span>';
+      else if (activity.transcoding === false && activity.source === 'plex') transcodingInfo = '<span class="activity-direct-play">⚡ Direct Play</span>';
+
+      return `
+        <div class="activity-item ${activity.type}" data-id="${activity.id}" data-source="${activity.source}">
+          <div class="activity-poster">
+            <img src="${posterUrl}" alt="${activity.title}" loading="lazy"
+                 onerror="this.src='https://via.placeholder.com/70x100/1a1a1a/00ff00?text=${encodeURIComponent(activity.title ? activity.title.charAt(0) : '?')}'">
+          </div>
+          <div class="activity-content">
+            <div class="activity-title-row">
+              ${activity.year ? `<span class="activity-year">(${activity.year})</span>` : ''}
+              <span class="activity-title">${activity.title}</span>
+            </div>
+            ${activity.subtitle ? `<div class="activity-subtitle">${activity.subtitle}</div>` : ''}
+            <div class="activity-meta-row">
+              <div class="activity-status">
+                <span class="activity-status-badge ${activity.type}">${enhancedStatusText}</span>
+              </div>
+              ${activity.user ? `
+                <div class="activity-user-info">
+                  <div class="activity-user-avatar">${activity.user.charAt(0).toUpperCase()}</div>
+                  <span>by ${activity.user}</span>
+                </div>
+              ` : ''}
+              <span class="activity-timestamp">${formatActivityTime(activity.timestamp)}</span>
+              ${activity.quality ? `<span class="activity-quality">${activity.quality}</span>` : ''}
+              ${downloadInfo}
+              ${transcodingInfo}
+            </div>
+          </div>
+          <div class="activity-type-indicator ${activity.source}"></div>
+          ${progressHtml}
+        </div>
+      `;
+    }
+
+    async function updateActivityFeed(activities) {
+      const feed = document.getElementById('activityFeed');
+      if (!feed) return;
+
+      if (!activities || activities.length === 0) {
+        feed.innerHTML = `
+          <div class="activity-item no-activity">
+            <span style="margin-left: 12px;">No recent media activity</span>
+          </div>
+        `;
+        return;
+      }
+
+      // Fetch/fix missing metadata for all activities in parallel
+      const filledActivities = await Promise.all(
+        activities.slice(0, 15).map(fillMissingMetadata)
+      );
+
+      // Grouping and priority: live > downloads > requests > completed
+      const grouped = groupActivities(filledActivities);
+      const prioritized = [
+        ...grouped.live,
+        ...grouped.downloads,
+        ...grouped.requests,
+        ...grouped.completed
+      ];
+
+      feed.innerHTML = prioritized.map(createActivityItem).join('');
+    }
+
+    async function updateMediaActivity() {
+      try {
+        const response = await fetch(`${apiEndpoint}/api/media/combined`, {
+          signal: AbortSignal.timeout(15000)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Media API error: ${response.status}`);
+        }
+
+        const activities = await response.json();
+        await updateActivityFeed(activities);
+      } catch (error) {
+        const feed = document.getElementById('activityFeed');
+        if (feed) {
+          feed.innerHTML = `
+            <div class="activity-item error-state">
+              <span style="margin-left: 12px;">Failed to load media activity - ${error.message}</span>
+            </div>
+          `;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

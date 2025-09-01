@@ -1,0 +1,9 @@
+Sonarr - 6ff1a3b70dcf40f1a7c1c7f05fbf2b5a
+radarr - c42c4e3ef0ad474d8f5187ecba354c63
+jellyseer - MTc1NjA2MDE5MTc2NmJmYWZjNDdhLWI1NmQtNGYzMS1hMDJiLTc0ZmMyMzNiMDU5Nw==
+Tautulli - a27404f5c80c4cb693f11a65f5956357
+plex - X-Plex-Token=yyzL1a5YxiHf8wiKz1_A
+sabnzbd - 73ff74de99784a0f9e82c1e4af9341a3
+lidarr - 4b777bf25826498ea7a911d1b6ccd4b3
+bazarr - a3ca3abf6b856554cbbd04b029bc1502
+prowlarr - ed0db1bd5d94496d87461d19b37be565
