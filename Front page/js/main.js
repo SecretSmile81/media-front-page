@@ -30,14 +30,143 @@ function renderAppsGrid() {
         row.innerHTML += `
           <a class="app" href="${app.url}" target="_blank" title="${app.name} Dashboard">
             <div class="app-card" data-app-id="${app.id}" tabindex="0" role="button" aria-label="${app.name} application">
-              <img src="${app.img}" alt="${app.name}" loading="lazy"
-                onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
-              <span class="app-name">${app.name}</span>
+              <div class="app-card-front">
+                <img src="${app.img}" alt="${app.name}" loading="lazy"
+                  onerror="this.src='https://via.placeholder.com/140x140/333/fff?text=${encodeURIComponent(app.name.charAt(0))}'">
+                <span class="app-name">${app.name}</span>
+              </div>
+              <div class="app-card-back">
+                <div class="status-info">
+                  <h4>Service Status</h4>
+                  <p>Checking connectivity...</p>
+                  <div class="status-indicator online"></div>
+                </div>
+              </div>
             </div>
           </a>`;
       }
     });
     appsContainer.appendChild(row);
+  }
+  
+  // Add enhanced interaction features after rendering
+  addInteractionFeatures();
+}
+
+// Add ripple effects and enhanced interactions
+function addInteractionFeatures() {
+  const appCards = document.querySelectorAll('.app-card');
+  
+  appCards.forEach(card => {
+    // Add ripple effect on click
+    card.addEventListener('click', function(e) {
+      createRipple(e, this);
+    });
+    
+    // Add keyboard support for card flip
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        // Simulate click for keyboard users
+        window.open(this.parentElement.href, '_blank');
+      } else if (e.key === 'i' || e.key === 'I') {
+        // Press 'i' to toggle info (card flip)
+        e.preventDefault();
+        toggleCardInfo(this);
+      }
+    });
+    
+    // Double-click to show info
+    card.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+      toggleCardInfo(this);
+    });
+  });
+}
+
+// Create ripple effect
+function createRipple(event, element) {
+  const ripple = document.createElement('span');
+  const rect = element.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+  
+  ripple.style.cssText = `
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    width: ${size}px;
+    height: ${size}px;
+    left: ${x}px;
+    top: ${y}px;
+    pointer-events: none;
+    transform: scale(0);
+    animation: ripple 0.6s ease-out;
+    z-index: 10;
+  `;
+  
+  // Add ripple keyframes if not already added
+  if (!document.querySelector('#ripple-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'ripple-keyframes';
+    style.textContent = `
+      @keyframes ripple {
+        to {
+          transform: scale(2);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  element.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+}
+
+// Toggle card info display
+function toggleCardInfo(card) {
+  const isFlipped = card.classList.contains('flipped');
+  
+  // Remove flip class from all cards first
+  document.querySelectorAll('.app-card.flipped').forEach(c => {
+    c.classList.remove('flipped');
+  });
+  
+  // If this card wasn't flipped, flip it
+  if (!isFlipped) {
+    card.classList.add('flip', 'flipped');
+    // Simulate service status check
+    setTimeout(() => updateServiceStatus(card), 300);
+  } else {
+    card.classList.remove('flip', 'flipped');
+  }
+}
+
+// Simulate service status check
+async function updateServiceStatus(card) {
+  const statusInfo = card.querySelector('.status-info p');
+  const statusIndicator = card.querySelector('.status-indicator');
+  const appId = card.dataset.appId;
+  
+  if (statusInfo) {
+    statusInfo.textContent = 'Checking...';
+    statusIndicator.className = 'status-indicator checking';
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      const isOnline = Math.random() > 0.2; // 80% chance of being online
+      statusInfo.textContent = isOnline ? 'Service Online' : 'Service Offline';
+      statusIndicator.className = `status-indicator ${isOnline ? 'online' : 'offline'}`;
+      
+      // Update main card status indicator
+      if (isOnline) {
+        card.classList.remove('offline', 'warning');
+      } else {
+        card.classList.add('offline');
+      }
+    }, 1000);
   }
 }
 renderAppsGrid();
